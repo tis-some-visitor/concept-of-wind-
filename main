@@ -1,0 +1,1180 @@
+import image as I
+import reactors as R
+
+
+aircraft = I.image-url("http://world.cs.brown.edu/1/clipart/airplane-small.png")
+balloon = I.image-url("http://world.cs.brown.edu/1/clipart/balloon-small.png")
+
+width = 1200
+height = 650
+base-height = 50
+craft-height = I.image-height(aircraft)
+craft-width = I.image-width(aircraft)
+ball-height = I.image-height(balloon)
+ball-width = I.image-width(balloon)
+stage = I.empty-scene(width, height)
+land = I.rectangle((width / 3), base-height, "solid", "olive")
+water = I.rectangle(((width / 3) * 2), base-height, "solid", "blue")
+base = I.beside(water, land)
+fuel-level = I.text("Fuel level", 15, "black")
+
+
+
+
+data Coordinates: cr(x, y) end
+
+
+data Obstacles: ob(
+  x :: Number, 
+  y :: Number, 
+  going-up :: Boolean,
+  k :: Boolean,      #switch for random change of direction (up or down)
+      left-bounce-time :: Number,
+      right-bounce-time :: Number,
+      up-bounce-time :: Number,
+      down-bounce-time :: Number) 
+end
+
+
+
+fun random-cust(n, m):
+  arr = random(n - m)
+  arr + m
+end
+
+
+a = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 4)), random-cust((height - (base-height + (ball-height / 2))), (ball-height / 2)), true, true, 10, 10, 10, 10)
+
+b = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 4)), random-cust((height - (base-height + (ball-height / 2))), (ball-height / 2)), true, true, 10, 10, 10, 10)
+
+c = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 4)), random-cust((height - (base-height + (ball-height / 2))),(ball-height / 2)), true, true, 10, 10, 10, 10)
+
+d = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 5)), random-cust((height - (base-height + (ball-height / 2))),(ball-height / 2)), true, true, 10, 10, 10, 10)
+
+ff = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 5)), random-cust((height - (base-height + (ball-height / 2))),(ball-height / 2)), true, true, 10, 10, 10, 10)
+
+j = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 6)), random-cust((height - (base-height + (ball-height / 2))),(ball-height / 2)), true, true, 10, 10, 10, 10)
+
+kk = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 6)), random-cust((height - (base-height + (ball-height / 2))),(ball-height / 2)), true, true, 10, 10, 10, 10)
+
+ll = ob(random-cust((width - ((ball-width / 2) - 10)), (width / 7)), random-cust((height - (base-height + (ball-height / 2))),(ball-height / 2)), true, true, 10, 10, 10, 10)
+
+
+ObstaclesList = [list: a, b, c, d, ff, j, kk, ll]
+
+
+data World: world(
+      f :: Number,               #fuel level
+      d :: Coordinates,          #of the aircraft
+      b :: List,                 #collection of structured data (type Obstacles)
+      s :: Number,               #an accessory for slowing down the aircraft
+      left-wind :: Boolean,
+      right-wind :: Boolean,
+      left-wind-time :: Number,
+      right-wind-time :: Number,
+      windspeed :: Number) 
+end
+
+ 
+speed1 = 5
+speed2 = 2
+key-dist = 15
+ballspeed = 2
+
+
+
+
+fun move-rate1(w):
+  w + speed1
+end
+
+fun move-rate2(w):
+  w + speed2
+end
+
+fun move-modulum(w):
+  num-modulo(move-rate1(w), width)
+end
+
+fun no-mo(w):
+  w + 0
+end
+
+fun ball-up(w):
+  w - ballspeed
+end
+
+fun ball-down(w):
+  w + ballspeed
+end
+
+fun ball-to-left(w):
+  w - ballspeed
+end
+
+fun ball-to-right(w):
+  w + ballspeed
+end
+
+
+#balloon's motion #################################################
+
+fun no-wind(w):
+  acc = [list: ]
+  no-wind-sorter(w, acc)
+end
+
+
+fun no-wind-sorter(w, acc):
+  cases (List) w:
+    | empty => empty
+    | link(f, r) =>
+      addition = acc.push(f)
+      if bouling-to-right(w.append(addition), f.x, f.y) == true:
+        link(fly-to-right(f), no-wind-sorter(r, addition))
+      else if bouling-to-left(w.append(addition), f.x, f.y) == true:
+        link(fly-to-left(f), no-wind-sorter(r, addition))
+      else:
+        link(regular-move(f), no-wind-sorter(r, addition))
+  end
+end
+end
+
+
+
+fun my-square(n): n * n end
+
+fun bouling-to-right(l, x, y):
+  cases (List) l:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+          and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+          and ((x - f.x) >= 0): 
+      true
+      else: bouling-to-right(r, x, y)
+      end
+  end
+end
+
+
+fun bouling-to-left(l, x, y):
+  cases (List) l:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+        and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+        and ((x - f.x) < 0): 
+      true
+      else: bouling-to-left(r, x, y)
+      end
+  end
+end
+
+
+fun fly-to-left(f):
+  if (f.left-bounce-time == 0) and (f.right-bounce-time == 0):
+    ob(no-mo(f.x),
+      ball-up(f.y), 
+    f.going-up,
+    rand(f.k),
+    10,
+    10,
+    10,
+    10)
+  else if ((f.left-bounce-time < 10) and (f.left-bounce-time > 0)) 
+    and (f.x <= ((ball-width / 2) + 5)):
+    ob(ball-to-right(f.x),
+    no-mo(f.y), 
+    f.going-up,
+    rand(f.k),
+    f.left-bounce-time - 1,
+    f.right-bounce-time,
+    10,
+    10)
+  else if f.left-bounce-time == 0:
+    ob(ball-to-left(f.x),
+    no-mo(f.y), 
+    f.going-up,
+    rand(f.k),
+    10,
+    f.right-bounce-time,
+    10,
+    10)
+    else:
+    ob(ball-to-left(f.x),
+    no-mo(f.y), 
+    f.going-up,
+    rand(f.k),
+    f.left-bounce-time - 1,
+    f.right-bounce-time,
+    10,
+    10)
+end
+  end
+
+
+
+fun fly-to-right(f):
+  if (f.left-bounce-time == 0) and (f.right-bounce-time == 0):
+    ob(no-mo(f.x),
+      ball-down(f.y), 
+    f.going-up,
+    rand(f.k),
+    10,
+    10,
+    10,
+    10)
+  else if ((f.right-bounce-time < 10) and (f.right-bounce-time > 0)) 
+    and (f.x >= (width - ((ball-width / 2) + 5))):
+    ob(ball-to-left(f.x),
+    no-mo(f.y), 
+    f.going-up,
+    rand(f.k),
+    f.left-bounce-time,
+      f.right-bounce-time - 1,
+      10,
+    10)
+  else if f.right-bounce-time == 0:
+    ob(ball-to-right(f.x),
+    no-mo(f.y), 
+    f.going-up,
+    rand(f.k),
+      f.left-bounce-time,
+      10,
+      10,
+    10)
+  else:
+    ob(ball-to-right(f.x),
+    no-mo(f.y), 
+    f.going-up,
+    rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time - 1,
+      10,
+    10)
+end
+end
+
+
+
+
+
+ 
+
+fun rand(w):
+  if random(300) == 50:
+    false
+  else:
+    true
+end
+end
+
+
+fun regular-move(f):
+  if (f.left-bounce-time == 0) and (f.right-bounce-time == 0):
+    ob(no-mo(f.x),
+      ball-up(f.y), 
+      f.going-up,
+      rand(f.k),
+      10,
+      10,
+      10,
+    10)
+  else if ((f.left-bounce-time > 0) and (f.left-bounce-time < 10)) and (f.x > ((ball-width / 2) + 5)):
+    ob(ball-to-left(f.x),
+      no-mo(f.y), 
+      f.going-up,
+      rand(f.k),
+      f.left-bounce-time - 1,
+      f.right-bounce-time,
+      10,
+    10)
+  else if ((f.left-bounce-time > 0) and (f.left-bounce-time < 10)) and (f.x <= ((ball-width / 2) + 5)):
+    ob(ball-to-right(f.x),
+      no-mo(f.y), 
+      f.going-up,
+      rand(f.k),
+      f.left-bounce-time - 1,
+      f.right-bounce-time,
+      10,
+      10)
+  else if ((f.right-bounce-time > 0) and (f.right-bounce-time < 10)) and (f.x < (width - ((ball-width / 2) + 5))):
+    ob(ball-to-right(f.x),
+      no-mo(f.y), 
+      f.going-up,
+      rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time - 1,
+      10,
+    10)
+  else if ((f.right-bounce-time > 0) and (f.right-bounce-time < 10)) and (f.x >= (width - ((ball-width / 2) + 5))):
+    ob(ball-to-left(f.x),
+      no-mo(f.y), 
+      f.going-up,
+      rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time - 1,
+      10,
+    10)
+  else if f.left-bounce-time == 0:
+    ob(no-mo(f.x),
+      no-mo(f.y), 
+      f.going-up,
+      rand(f.k),
+      10,
+      f.right-bounce-time,
+      10,
+    10)
+  else if f.right-bounce-time == 0:
+    ob(no-mo(f.x),
+      no-mo(f.y), 
+      f.going-up,
+      rand(f.k),
+      f.left-bounce-time,
+      10,
+      10,
+    10)
+  else if f.k == false:
+   ob(no-mo(f.x),
+      no-mo(f.y), 
+      not(f.going-up),
+      rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+    10)
+  else if f.y >= (height - (base-height + (ball-height / 2))):
+    ob(no-mo(f.x),
+      ball-up(f.y), 
+      not(f.going-up),
+      rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+    10)
+  else if f.going-up == false:
+    ob(no-mo(f.x),
+    ball-down(f.y), 
+      f.going-up,
+      rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+    10)
+  else if f.y <= (ball-height / 2):
+    ob(no-mo(f.x),
+      no-mo(f.y), 
+      not(f.going-up),
+      rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+    10)
+  else:
+    ob(no-mo(f.x),
+      ball-up(f.y), 
+      f.going-up,
+      rand(f.k),
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      10)
+end
+end
+
+
+
+
+
+
+
+
+fun wind-to-left(w, speed):
+  acc = [list: ]
+  wind-to-left-sorter(w, acc, speed)
+end
+
+
+fun wind-to-left-sorter(w, acc, speed):
+  cases (List) w:
+    | empty => empty
+    | link(f, r) =>
+      addition = acc.push(f)
+      if bouling-up(w.append(addition), f.x, f.y) == true:
+        link(left-bam-up(f, speed), wind-to-left-sorter(r, addition, speed))
+      else if bouling-down(w.append(addition), f.x, f.y) == true:
+        link(left-bam-down(f, speed), wind-to-left-sorter(r, addition, speed))
+      else:
+        link(wind-to-left-move(f, speed), wind-to-left-sorter(r, addition, speed))
+  end
+end
+end
+
+
+
+
+fun bouling-up(l, x, y):
+  cases (List) l:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+          and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+        and ((y - f.y) < 0): 
+      true
+      else: bouling-up(r, x, y)
+      end
+  end
+end
+
+
+fun bouling-down(l, x, y):
+  cases (List) l:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+        and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+        and ((y - f.y) >= 0): 
+      true
+      else: bouling-down(r, x, y)
+      end
+  end
+end
+
+
+
+fun left-bam-up(f, speed):
+  if (f.up-bounce-time == 0) and (f.down-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      10)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+      and (f.x <= ((ball-width / 2) + 5)):
+    ob(f.x,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+    and ((f.x > ((ball-width / 2) + 5)) and (f.y <= (ball-height / 2))):
+    ob((f.x + (speed / 2)),
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if (f.up-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      f.down-bounce-time)
+  else:
+    ob((f.x + (speed / 2)),
+      (f.y - (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)  
+end
+end
+
+
+fun left-bam-down(f, speed):
+  if (f.up-bounce-time == 0) and (f.down-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      10)
+  else if 
+    ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+      and (f.x <= ((ball-width / 2) + 5)):
+    ob(f.x,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+  else if ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+      and ((f.x > ((ball-width / 2) + 5)) and (f.y >= (height - (ball-height / 2)))):
+    ob((f.x + (speed / 2)),
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+      else if (f.down-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      10)
+  else:
+    ob((f.x + (speed / 2)),
+      (f.y + (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+        f.down-bounce-time - 1)  
+end
+end
+
+
+fun wind-to-left-move(f, speed):
+  if (f.up-bounce-time == 0) and (f.down-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      10)
+  else if 
+    ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+      and (f.x <= ((ball-width / 2) + 5)):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+  else if ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+      and ((f.x > ((ball-width / 2) + 5)) and (f.y >= (height - (ball-height / 2)))):
+    ob(f.x + speed,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+        else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+      and (f.x <= ((ball-width / 2) + 5)):
+    ob(f.x,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+    and ((f.x > ((ball-width / 2) + 5)) and (f.y <= (ball-height / 2))):
+    ob(f.x + speed,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if f.up-bounce-time == 0:
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      f.down-bounce-time)
+  else if f.down-bounce-time == 0:
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      10)
+  else if (((f.up-bounce-time < 10) and (f.up-bounce-time > 0)) 
+      and ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time - 1)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0)):
+      ob((f.x + (speed / 2)),
+      (f.y - (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if ((f.down-bounce-time < 10) and (f.down-bounce-time > 0)):
+      ob((f.x + (speed / 2)),
+      (f.y + (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+        f.down-bounce-time - 1) 
+  else if f.x <= ((ball-width / 2) + 5):
+      ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time)
+  else:
+    ob((f.x - speed),
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time)
+    
+end
+end
+
+
+
+                                                              
+
+fun wind-to-right(w, speed):
+  acc = [list: ]
+  wind-to-right-sorter(w, acc, speed)
+end
+
+
+fun wind-to-right-sorter(w, acc, speed):
+  cases (List) w:
+    | empty => empty
+    | link(f, r) =>
+      addition = acc.push(f)
+      if bouling-up(w.append(addition), f.x, f.y) == true:
+        link(right-bam-up(f, speed), wind-to-right-sorter(r, addition, speed))
+      else if bouling-down(w.append(addition), f.x, f.y) == true:
+        link(right-bam-down(f, speed), wind-to-right-sorter(r, addition, speed))
+      else:
+        link(wind-to-right-move(f, speed), wind-to-right-sorter(r, addition, speed))
+  end
+end
+end
+
+
+
+fun right-bam-up(f, speed):
+  if (f.up-bounce-time == 0) and (f.down-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      10)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+      and (f.x >= (width - ((ball-width / 2) + 5))):
+    ob(f.x,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+    and ((f.x < (width - ((ball-width / 2) + 5))) and (f.y <= (ball-height / 2))):
+    ob((f.x + (speed / 2)),
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if f.up-bounce-time == 0:
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      f.down-bounce-time)
+  else:
+    ob((f.x - (speed / 2)),
+      (f.y - (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)  
+end
+end
+
+
+fun right-bam-down(f, speed):
+  if (f.up-bounce-time == 0) and (f.down-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      10)
+  else if 
+    (((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+      and ((f.x >= (width - ((ball-width / 2) + 5))))):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+  else if ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+    and ((f.x < (width - ((ball-width / 2) + 5))) and (f.y >= (height - (ball-height / 2)))):
+    ob((f.x - (speed / 2)),
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+      else if f.down-bounce-time == 0:
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      10)
+  else:
+    ob((f.x - (speed / 2)),
+      (f.y + (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)  
+end
+end
+
+
+fun wind-to-right-move(f, speed):
+  if (f.up-bounce-time == 0) and (f.down-bounce-time == 0):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      10)
+  else if 
+    ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+    and (f.x >= (width - ((ball-width / 2) + 5))):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+  else if ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))
+    and ((f.x < (width - ((ball-width / 2) + 5))) and (f.y >= (height - (ball-height / 2)))):
+    ob((f.x - (speed / 2)),
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time - 1)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+    and (f.x >= (width - ((ball-width / 2) + 5))):
+    ob(f.x,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0))
+    and ((f.x < (width - ((ball-width / 2) + 5))) and (f.y <= (ball-height / 2))):
+    ob(f.x - speed,
+      f.y, 
+    f.going-up,
+    f.k,
+    f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if f.up-bounce-time == 0:
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      10,
+      f.down-bounce-time)
+  else if f.down-bounce-time == 0:
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      10)
+  else if (((f.up-bounce-time < 10) and (f.up-bounce-time > 0)) 
+      and ((f.down-bounce-time < 10) and (f.down-bounce-time > 0))):
+    ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time - 1)
+  else if ((f.up-bounce-time < 10) and (f.up-bounce-time > 0)):
+    ob((f.x - (speed / 2)),
+      (f.y - (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time - 1,
+      f.down-bounce-time)
+  else if ((f.down-bounce-time < 10) and (f.down-bounce-time > 0)):
+    ob((f.x - (speed / 2)),
+      (f.y + (speed / 2)), 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+        f.down-bounce-time - 1) 
+  else if f.x >= (width - ((ball-width / 2) + 5)):
+      ob(f.x,
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time)
+  else:
+    ob((f.x + speed),
+      f.y, 
+      f.going-up,
+      f.k,
+      f.left-bounce-time,
+      f.right-bounce-time,
+      f.up-bounce-time,
+      f.down-bounce-time)
+    
+end
+end
+
+
+
+
+#world's motion ##############################################
+
+fun rand-for-wind(w):
+  if random(400) == 50:
+    true
+  else:
+    false
+end
+end
+
+fun rand-for-windspeed(w):
+  random(w) + 1
+end
+
+fun rand-for-windtime(w):
+  random(w) + 10
+end
+  
+  
+fun two-dimensional-movement(w):
+  if (w.d.y >= ((height - base-height) - (craft-height / 2))) 
+      and (w.d.x > (((width / 3) * 2) - (craft-width / 2))):
+    world(w.f,
+      cr(w.d.x + w.s,
+      no-mo(w.d.y)), 
+      no-wind(w.b),
+      (w.s - 0.25),
+      rand-for-wind(w.left-wind),
+      rand-for-wind(w.right-wind),
+      w.left-wind-time,
+      w.right-wind-time,
+      rand-for-windspeed(5))
+  else if ((w.left-wind == true) or ((w.left-wind == true) and (w.right-wind == true))) and (w.left-wind-time > 0):
+    world(w.f,
+      cr(move-modulum(w.d.x),
+      move-rate2(w.d.y)), 
+      wind-to-left(w.b, w.windspeed),
+      w.s,
+      w.left-wind,
+      w.right-wind,
+      (w.left-wind-time - 1),
+      w.right-wind-time,
+      w.windspeed)
+  else if (w.right-wind == true) and (w.right-wind-time > 0):
+    world(w.f,
+      cr(move-modulum(w.d.x),
+      move-rate2(w.d.y)), 
+      wind-to-right(w.b, w.windspeed),
+      w.s,
+      w.left-wind,
+      w.right-wind,
+      w.left-wind-time,
+      (w.right-wind-time - 1),
+      w.windspeed)
+  else if w.left-wind-time == 0:
+    world(w.f,
+      cr(move-modulum(w.d.x),
+      move-rate2(w.d.y)), 
+      no-wind(w.b),
+      w.s,
+      not(w.left-wind),
+      w.right-wind,
+      (w.left-wind-time + rand-for-windtime(80)),
+      w.right-wind-time,
+      w.windspeed)
+  else if w.right-wind-time == 0:
+    world(w.f,
+      cr(move-modulum(w.d.x),
+      move-rate2(w.d.y)), 
+      no-wind(w.b),
+      w.s,
+      w.left-wind,
+      not(w.right-wind),
+      w.left-wind-time,
+      (w.right-wind-time + rand-for-windtime(80)),
+       w.windspeed)
+  else:
+  world(w.f,
+      cr(move-modulum(w.d.x),
+      move-rate2(w.d.y)), 
+      no-wind(w.b),
+      w.s,
+      rand-for-wind(w.left-wind),
+      rand-for-wind(w.right-wind),
+      w.left-wind-time,
+      w.right-wind-time,
+      rand-for-windspeed(5))
+end
+end
+
+
+
+
+#drawing ###########################################
+
+fun produce-numbers-x(L):
+  cases (List) L:
+    | empty => [list:]
+    | link(f, r) =>
+      link(f.x, produce-numbers-x(r))
+  end
+end
+ 
+fun produce-numbers-y(L):
+  cases (List) L:
+    | empty => [list:]
+    | link(f, r) =>
+      link(f.y, produce-numbers-y(r))
+  end
+end
+
+
+fun the-moving-object(w):
+  I.place-image((I.text((num-to-string(w.f)), 25, "black")), 
+    1150,
+    50, I.place-image(base, 
+      (width / 2), 
+      (height - (base-height / 2)), I.place-image(fuel-level,
+        1150,
+        80, I.place-image(aircraft, 
+          w.d.x, 
+          w.d.y, I.place-image(balloon,
+            produce-numbers-x(w.b).get(0),
+            produce-numbers-y(w.b).get(0),
+            I.place-image(balloon,
+              produce-numbers-x(w.b).get(1),
+              produce-numbers-y(w.b).get(1), I.place-image(balloon,
+                produce-numbers-x(w.b).get(2),
+                produce-numbers-y(w.b).get(2), I.place-image(balloon,
+                    produce-numbers-x(w.b).get(3),
+                  produce-numbers-y(w.b).get(3), I.place-image(balloon,
+                     produce-numbers-x(w.b).get(4),
+                    produce-numbers-y(w.b).get(4), I.place-image(balloon,
+                    produce-numbers-x(w.b).get(5),
+                      produce-numbers-y(w.b).get(5), I.place-image(balloon,
+                     produce-numbers-x(w.b).get(6),
+                        produce-numbers-y(w.b).get(6), I.place-image(balloon,
+                      produce-numbers-x(w.b).get(7),
+                      produce-numbers-y(w.b).get(7),
+                          stage))))))))))))
+end
+
+
+
+
+#control ############################################
+
+#and (w.d.y >= (craft-height / 2)) 
+#add to "key up" to limit the aircraft's possible altitude
+
+fun alter-airplane-y-on-key(w, key):
+  ask:
+    | key == "up"   then:
+      if ((w.f > 0) )
+        and (w.d.y <= ((height - base-height) - (craft-width / 2))):
+        world(
+          w.f - 1, 
+          cr(w.d.x, w.d.y - key-dist), 
+          w.b, 
+          w.s, 
+          w.left-wind,
+          w.right-wind,
+          w.left-wind-time,
+          w.right-wind-time,
+          w.windspeed)
+      else:
+        w 
+      end
+      
+    | key == "down" then:
+      if w.d.y <= ((height - base-height) - (craft-width / 2)):
+        world(
+          w.f, 
+          cr(w.d.x, w.d.y + key-dist), 
+          w.b, 
+          w.s, 
+          w.left-wind,
+          w.right-wind,
+          w.left-wind-time,
+          w.right-wind-time,
+          w.windspeed)
+      else:
+        w
+      end
+      
+    | otherwise: w
+  end
+end 
+#crutial to make "w" - the first argument and "key" the second
+#without "otherwise" the game will crash whenever any other key is pressed
+
+
+
+#ending criteria ########################################
+
+fun is-on-baseline(w):
+  if (w.d.y >= ((height - base-height) - (craft-height / 2))) 
+    and (w.d.x <= (((width / 3) * 2) - (craft-width / 2))):
+    true
+  else if w.s <= 0:
+    true
+  else: false
+    
+end
+  end
+
+
+fun true-overlapping(w):
+  all-overlapping(w.b, w.d.x, w.d.y)
+end
+
+
+fun all-overlapping(ab, bb, cb):
+  cases (List) ab:
+    | empty => false
+    | link(f,r) =>
+      if num-sqrt(my-square(bb - f.x) + my-square(cb - f.y)) > 75:
+        all-overlapping(r, bb, cb)
+      else: true
+      end
+  end
+end
+
+
+
+fun game-ends(w):
+  ask:
+    | is-on-baseline(w)                then: true
+    | true-overlapping(w)              then: true
+    | otherwise: false
+  end
+end
+
+  
+
+####################################
+
+Start = world(
+  400, 
+  cr((craft-width / 2), (craft-height / 2)), 
+  ObstaclesList, 
+  speed1, 
+  false, 
+  false, 
+  rand-for-windtime(80), 
+  rand-for-windtime(80),
+  rand-for-windspeed(7))
+
+animation = reactor:
+  init: Start,
+  on-tick: two-dimensional-movement,
+  on-key: alter-airplane-y-on-key,
+  to-draw: the-moving-object,
+  stop-when: game-ends
+end
+
+R.interact(animation)
