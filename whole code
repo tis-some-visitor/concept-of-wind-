@@ -1,0 +1,1163 @@
+import image as I
+import reactors as R
+
+
+aircraft-img = I.image-url("http://world.cs.brown.edu/1/clipart/airplane-small.png")
+balloon-img = I.image-url("http://world.cs.brown.edu/1/clipart/balloon-small.png")
+width = 1200
+height = 650
+base-height = 50
+craft-height = I.image-height(aircraft-img)
+craft-width = I.image-width(aircraft-img)
+ball-height = I.image-height(balloon)
+ball-width = I.image-width(balloon)
+stage = I.empty-scene(width, height)
+land = I.rectangle((width / 3), base-height, "solid", "olive")
+water = I.rectangle(((width / 3) * 2), base-height, "solid", "blue")
+base = I.beside(water, land)
+fuel-plate = I.text("Fuel level", 15, "black")
+
+
+fun produce-numbers-x(balloons-coordinates-list):
+  cases (List) balloons-coordinates-list:
+    | empty => [list: ]
+    | link(f, r) =>
+      link(f.x, produce-numbers-x(r))
+  end
+end
+ 
+
+fun produce-numbers-y(balloons-coordinates-list):
+  cases (List) balloons-coordinates-list:
+    | empty => [list: ]
+    | link(f, r) =>
+      link(f.y, produce-numbers-y(r))
+  end
+end
+
+
+fun drawing-everything(world-state):
+    I.place-image((I.text((num-to-string(world-state.fuel-level)), 25, "black")), 
+    1150,
+    50, 
+    I.place-image(base, 
+      (width / 2), 
+        (height - (base-height / 2)), 
+      I.place-image(fuel-plate,
+        1150,
+        80, 
+        I.place-image(aircraft-img, 
+          world-state.aircraft.x, 
+          world-state.aircraft.y, 
+          I.place-image(balloon-img,
+            produce-numbers-x(world-state.balloons-list).get(0),
+            produce-numbers-y(world-state.balloons-list).get(0),
+            I.place-image(balloon-img,
+              produce-numbers-x(world-state.balloons-list).get(1),
+              produce-numbers-y(world-state.balloons-list).get(1), 
+              I.place-image(balloon-img,
+                produce-numbers-x(world-state.balloons-list).get(2),
+                produce-numbers-y(world-state.balloons-list).get(2), 
+                I.place-image(balloon-img,
+                  produce-numbers-x(world-state.balloons-list).get(3),
+                  produce-numbers-y(world-state.balloons-list).get(3), 
+                  I.place-image(balloon-img,
+                    produce-numbers-x(world-state.balloons-list).get(4),
+                    produce-numbers-y(world-state.balloons-list).get(4), 
+                    I.place-image(balloon-img,
+                      produce-numbers-x(world-state.balloons-list).get(5),
+                      produce-numbers-y(world-state.balloons-list).get(5),
+                      I.place-image(balloon-img,
+                        produce-numbers-x(world-state.balloons-list).get(6),
+                        produce-numbers-y(world-state.balloons-list).get(6),
+                        I.place-image(balloon-img,
+                          produce-numbers-x(world-state.balloons-list).get(7),
+                          produce-numbers-y(world-state.balloons-list).get(7),
+                          stage))))))))))))
+end
+
+
+#Balloons setup
+
+
+data Obstacles: ob(
+  x :: Number, 
+  y :: Number, 
+  going-up :: Boolean,
+  turn-around :: Boolean,
+  left-bounce-time :: Number,
+  right-bounce-time :: Number,
+  up-bounce-time :: Number,
+  down-bounce-time :: Number) 
+end
+ 
+
+fun random-between(max-number, min-number):
+  x = random(max-number - min-number)
+  x + min-number
+end
+
+
+fun random-minus-quarter-x-position-for-ball():
+  random-between((width - ((ball-width / 2) - 10)), (width / 4))
+end
+
+
+fun random-minus-fifth-x-position-for-ball():
+  random-between((width - ((ball-width / 2) - 10)), (width / 5))
+end
+
+
+fun random-minus-sixth-x-position-for-ball():
+  random-between((width - ((ball-width / 2) - 10)), (width / 6))
+end
+
+
+fun random-minus-seventh-x-position-for-ball():
+  random-between((width - ((ball-width / 2) - 10)), (width / 7))
+end
+
+
+fun random-y-position-for-ball():
+  random-between(height - (base-height + (ball-height / 2)), (ball-height / 2))
+end
+
+
+coordinates-of-ball-1 = ob(
+  random-minus-quarter-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+coordinates-of-ball-2 = ob(
+  random-minus-quarter-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+coordinates-of-ball-3 = ob(
+  random-minus-quarter-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+coordinates-of-ball-4 = ob(
+  random-minus-fifth-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+coordinates-of-ball-5 = ob(
+  random-minus-fifth-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+coordinates-of-ball-6 = ob(
+  random-minus-sixth-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+coordinates-of-ball-7 = ob(
+  random-minus-sixth-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+coordinates-of-ball-8 = ob(
+  random-minus-seventh-x-position-for-ball(),
+  random-y-position-for-ball(),
+  true, false, 10, 10, 10, 10)
+
+
+List-of-balloons-coordinates = [list: 
+  coordinates-of-ball-1, 
+  coordinates-of-ball-2, 
+  coordinates-of-ball-3, 
+  coordinates-of-ball-4, 
+  coordinates-of-ball-5, 
+  coordinates-of-ball-6, 
+  coordinates-of-ball-7, 
+  coordinates-of-ball-8]
+
+
+##BAlLOONS motion
+
+
+ballspeed = 2
+right-stage-border-for-balls = width - ((ball-width / 2) + 5)
+left-stage-border-for-balls = (ball-width / 2) + 5
+upper-stage-border-for-balls = ball-height / 2
+lower-stage-border-for-balls = height - (base-height + (ball-height / 2))
+
+
+fun ball-up(y):
+  y - ballspeed
+end
+
+
+fun ball-down(y):
+  y + ballspeed
+end
+
+
+fun ball-to-left(x):
+  x - ballspeed
+end
+
+
+fun ball-to-right(x):
+  x + ballspeed
+end
+
+
+fun random-turn-around():
+  if random(300) == 50:
+    true
+  else:
+    false
+  end
+end
+
+
+fun refil-bounce-time-counters-and-go-up(ball):
+  ob(ball.x,
+    ball-up(ball.y), 
+    ball.going-up,
+    random-turn-around(),
+    10,
+    10,
+    10,
+    10)
+end
+
+
+fun refil-bounce-time-counters-and-go-down(ball):
+  ob(ball.x,
+    ball-down(ball.y), 
+    ball.going-up,
+    random-turn-around(),
+    10,
+    10,
+    10,
+    10)
+end
+
+
+fun refil-up-and-down-bounce-time-counters(ball):
+  ob(ball.x,
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun refil-left-bounce-time-counter(ball):
+  ob(ball-to-left(ball.x),
+    ball.y, 
+    ball.going-up,
+    random-turn-around(),
+    10,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun refil-right-bounce-time-counter(ball):
+ob(ball-to-right(ball.x),
+    ball.y, 
+    ball.going-up,
+    random-turn-around(),
+    ball.left-bounce-time,
+    10,
+    10,
+    10)
+end
+
+
+fun refil-up-bounce-counter(ball):
+  ob(ball.x,
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    10,
+    ball.down-bounce-time)
+end
+
+
+fun refil-down-bounce-counter(ball):
+  ob(ball.x,
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    10)
+end
+
+
+fun push-off-the-left-border(ball):
+  ob(ball-to-right(ball.x),
+    ball.y, 
+    ball.going-up,
+    random-turn-around(),
+    ball.left-bounce-time - 1,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun push-off-the-right-border(ball):
+  ob(ball-to-left(ball.x),
+    ball.y, 
+    ball.going-up,
+    random-turn-around(),
+    ball.left-bounce-time,
+    ball.right-bounce-time - 1,
+    10,
+    10)
+end
+
+
+fun regular-bounce-to-left(ball):
+  ob(ball-to-left(ball.x),
+    ball.y, 
+    ball.going-up,
+    random-turn-around(),
+    ball.left-bounce-time - 1,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun regular-bounce-to-right(ball):
+  ob(ball-to-right(ball.x),
+    ball.y, 
+    ball.going-up,
+    random-turn-around(),
+    ball.left-bounce-time,
+    ball.right-bounce-time - 1,
+    10,
+    10)
+end
+
+
+fun regular-bounce-up-and-left(ball, speed-of-wind):
+  ob((ball.x - (speed-of-wind / 2)),
+    (ball.y - (speed-of-wind / 2)), 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time - 1,
+    ball.down-bounce-time)
+end
+
+
+fun regular-bounce-down-and-left(ball, speed-of-wind):
+  ob((ball.x - (speed-of-wind / 2)),
+    (ball.y + (speed-of-wind / 2)), 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    ball.down-bounce-time - 1)
+end
+
+
+fun regular-bounce-up-and-right(ball, speed-of-wind):
+  ob((ball.x + (speed-of-wind / 2)),
+    (ball.y - (speed-of-wind / 2)), 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time - 1,
+    ball.down-bounce-time)
+end
+
+
+fun regular-bounce-down-and-right(ball, speed-of-wind):
+  ob((ball.x + (speed-of-wind / 2)),
+    (ball.y + (speed-of-wind / 2)), 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    ball.down-bounce-time - 1)
+end
+
+
+fun stopped-but-up-bounce-time-counting(ball):
+  ob(ball.x,
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time - 1,
+    ball.down-bounce-time)
+end
+
+
+fun stopped-but-down-bounce-time-counting(ball):
+  ob(ball.x,
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    ball.down-bounce-time - 1)
+end
+
+
+fun move-left-along-upper-border(ball, speed-of-wind):
+  ob((ball.x - (speed-of-wind / 2)),
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time - 1,
+    ball.down-bounce-time)
+end
+
+
+fun move-right-along-upper-border(ball, speed-of-wind):
+  ob((ball.x + (speed-of-wind / 2)),
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time - 1,
+    ball.down-bounce-time)
+end
+
+
+fun move-left-along-lower-border(ball, speed-of-wind):
+  ob((ball.x - (speed-of-wind / 2)),
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    ball.down-bounce-time - 1)
+end
+
+
+fun move-right-along-lower-border(ball, speed-of-wind):
+  ob((ball.x + (speed-of-wind / 2)),
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    ball.down-bounce-time - 1)
+end
+
+
+fun inverse-the-going-up-switch(ball):
+   ob(ball.x,
+    ball.y, 
+    not(ball.going-up),
+    random-turn-around(),
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun lower-border-reached-so-fly-up(ball):
+  ob(ball.x,
+    ball-up(ball.y), 
+    not(ball.going-up),
+    random-turn-around(),
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun ball-descending(ball):
+  ob(ball.x,
+    ball-down(ball.y), 
+    ball.going-up,
+    random-turn-around(),
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun ball-rising(ball):
+  ob(ball.x,
+    ball-up(ball.y), 
+    ball.going-up,
+    random-turn-around(),
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    10,
+    10)
+end
+
+
+fun flying-left-with-the-wind(ball, speed-of-wind):
+  ob(ball.x - speed-of-wind,
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    ball.down-bounce-time)
+end
+    
+
+fun flying-right-with-the-wind(ball, speed-of-wind):
+  ob(ball.x + speed-of-wind,
+    ball.y, 
+    ball.going-up,
+    ball.turn-around,
+    ball.left-bounce-time,
+    ball.right-bounce-time,
+    ball.up-bounce-time,
+    ball.down-bounce-time)
+end
+
+
+#movement logic (accounting winds, collisions, borders)
+
+
+fun bounce-to-left(ball): 
+  if (ball.left-bounce-time == 0) and (ball.right-bounce-time == 0):
+    refil-bounce-time-counters-and-go-up(ball)
+  else if ((ball.left-bounce-time < 10) and (ball.left-bounce-time > 0)) 
+    and (ball.x <= left-stage-border-for-balls):
+    push-off-the-left-border(ball)
+  else if ball.left-bounce-time == 0:
+    refil-left-bounce-time-counter(ball)
+  else:
+    regular-bounce-to-left(ball)
+  end
+end
+
+
+fun bounce-to-right(ball): 
+  if (ball.left-bounce-time == 0) and (ball.right-bounce-time == 0):
+    refil-bounce-time-counters-and-go-down(ball)
+  else if ((ball.right-bounce-time < 10) and (ball.right-bounce-time > 0)) 
+    and (ball.x >= right-stage-border-for-balls):
+    push-off-the-right-border(ball)
+  else if ball.right-bounce-time == 0:
+    refil-right-bounce-time-counter(ball)
+  else:
+    regular-bounce-to-right(ball)
+  end
+end
+
+
+fun bounce-up-and-right(ball, speed-of-wind):
+  if (ball.up-bounce-time == 0) and (ball.down-bounce-time == 0):
+    refil-up-and-down-bounce-time-counters(ball)
+      else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0))
+        and (ball.x <= left-stage-border-for-balls):
+        stopped-but-up-bounce-time-counting(ball)  
+  else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0)) 
+    and ((ball.x > left-stage-border-for-balls) 
+      and (ball.y <= upper-stage-border-for-balls)):
+    move-right-along-upper-border(ball, speed-of-wind)
+  else if (ball.up-bounce-time == 0):
+    refil-up-bounce-counter(ball) 
+  else:
+    regular-bounce-up-and-right(ball, speed-of-wind)
+  end
+end
+
+
+fun bounce-down-and-right(ball, speed-of-wind): 
+  if (ball.up-bounce-time == 0) and (ball.down-bounce-time == 0):
+    refil-up-and-down-bounce-time-counters(ball)
+      else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+        and (ball.x <= left-stage-border-for-balls):
+        stopped-but-down-bounce-time-counting(ball)
+  else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+          and ((ball.x > left-stage-border-for-balls) 
+      and (ball.y >= lower-stage-border-for-balls)):
+    move-right-along-lower-border(ball, speed-of-wind)
+  else if (ball.down-bounce-time == 0):
+    refil-down-bounce-counter(ball)
+  else:
+    regular-bounce-down-and-right(ball, speed-of-wind)
+  end
+end
+
+
+fun bounce-up-and-left(ball, speed-of-wind): 
+  if (ball.up-bounce-time == 0) and (ball.down-bounce-time == 0):
+    refil-up-and-down-bounce-time-counters(ball)
+      else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0))
+          and (ball.x >= right-stage-border-for-balls):
+        stopped-but-up-bounce-time-counting(ball)
+  else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0))
+        and ((ball.x < right-stage-border-for-balls) 
+      and (ball.y <= upper-stage-border-for-balls)):
+    move-left-along-upper-border(ball, speed-of-wind)
+  else if ball.up-bounce-time == 0:
+    refil-up-bounce-counter(ball)
+  else:
+    regular-bounce-up-and-left(ball, speed-of-wind)
+  end
+end
+
+
+fun bounce-down-and-left(ball, speed-of-wind): 
+  if (ball.up-bounce-time == 0) and (ball.down-bounce-time == 0):
+    refil-up-and-down-bounce-time-counters(ball)
+      else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+        and (ball.x >= right-stage-border-for-balls):
+        stopped-but-down-bounce-time-counting(ball)
+  else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+        and ((ball.x < right-stage-border-for-balls) 
+      and (ball.y >= lower-stage-border-for-balls)):
+    move-left-along-lower-border(ball, speed-of-wind)
+  else if ball.down-bounce-time == 0:
+    refil-down-bounce-counter(ball)
+  else:
+    regular-bounce-down-and-left(ball, speed-of-wind)
+  end
+end
+
+
+fun regular-movement(ball): 
+  if (ball.left-bounce-time == 0) and (ball.right-bounce-time == 0):
+    refil-bounce-time-counters-and-go-up(ball)
+  else if ((ball.left-bounce-time > 0) and (ball.left-bounce-time < 10)) 
+    and (ball.x > (left-stage-border-for-balls)):
+    regular-bounce-to-left(ball)
+  else if ((ball.left-bounce-time < 10) and (ball.left-bounce-time > 0)) 
+    and (ball.x <= left-stage-border-for-balls):
+    push-off-the-left-border(ball)
+  else if ((ball.right-bounce-time > 0) and (ball.right-bounce-time < 10)) 
+    and (ball.x < right-stage-border-for-balls):
+    regular-bounce-to-right(ball)
+  else if ((ball.right-bounce-time < 10) and (ball.right-bounce-time > 0)) 
+    and (ball.x >= right-stage-border-for-balls):
+    push-off-the-right-border(ball)
+  else if ball.left-bounce-time == 0:
+    refil-left-bounce-time-counter(ball)
+  else if ball.right-bounce-time == 0:
+    refil-right-bounce-time-counter(ball)
+  else if ball.turn-around == true:
+    inverse-the-going-up-switch(ball)
+  else if ball.y >= lower-stage-border-for-balls:
+    lower-border-reached-so-fly-up(ball)
+  else if ball.going-up == false:
+    ball-descending(ball)
+  else if ball.y <= upper-stage-border-for-balls:
+    inverse-the-going-up-switch(ball)
+  else:
+    ball-rising(ball)
+  end
+end
+
+
+fun regular-wind-to-left-movement(ball, speed-of-wind):
+  if (ball.up-bounce-time == 0) and (ball.down-bounce-time == 0):
+    refil-up-and-down-bounce-time-counters(ball)
+      else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+          and (ball.x <= left-stage-border-for-balls):
+        stopped-but-down-bounce-time-counting(ball)
+  else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+          and ((ball.x > left-stage-border-for-balls) 
+      and (ball.y >= lower-stage-border-for-balls)):
+    move-right-along-lower-border(ball, speed-of-wind)
+      else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0))
+          and (ball.x <= left-stage-border-for-balls):
+       stopped-but-up-bounce-time-counting(ball)
+  else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0))
+       and ((ball.x > left-stage-border-for-balls) 
+      and (ball.y <= upper-stage-border-for-balls)):
+    move-right-along-upper-border(ball, speed-of-wind)
+  else if ball.up-bounce-time == 0:
+    refil-up-bounce-counter(ball)
+  else if ball.down-bounce-time == 0:
+    refil-down-bounce-counter(ball)
+  else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0)):
+    regular-bounce-up-and-right(ball, speed-of-wind) 
+  else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0)):
+    regular-bounce-down-and-right(ball, speed-of-wind)
+  else if ball.x <= left-stage-border-for-balls:
+    ball
+  else:
+    flying-left-with-the-wind(ball, speed-of-wind)
+  end
+end
+
+
+fun regular-wind-to-right-movement(ball, speed-of-wind):  
+  if (ball.up-bounce-time == 0) and (ball.down-bounce-time == 0):
+    refil-up-and-down-bounce-time-counters(ball) 
+      else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+          and (ball.x >= right-stage-border-for-balls):
+        stopped-but-down-bounce-time-counting(ball)    
+  else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0))
+        and ((ball.x < right-stage-border-for-balls) 
+      and (ball.y >= lower-stage-border-for-balls)):
+    move-left-along-lower-border(ball, speed-of-wind)    
+      else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0))
+          and (ball.x >= right-stage-border-for-balls):
+        stopped-but-up-bounce-time-counting(ball) 
+  else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0))
+        and ((ball.x < right-stage-border-for-balls) 
+      and (ball.y <= upper-stage-border-for-balls)):
+    move-left-along-upper-border(ball, speed-of-wind)
+  else if ball.up-bounce-time == 0:
+    refil-up-bounce-counter(ball)
+  else if ball.down-bounce-time == 0:
+    refil-down-bounce-counter(ball)
+  else if ((ball.up-bounce-time < 10) and (ball.up-bounce-time > 0)):
+    regular-bounce-up-and-left(ball, speed-of-wind)
+  else if ((ball.down-bounce-time < 10) and (ball.down-bounce-time > 0)):
+    regular-bounce-down-and-left(ball, speed-of-wind)
+  else if ball.x >= right-stage-border-for-balls:
+    ball
+  else:
+    flying-right-with-the-wind(ball, speed-of-wind)
+  end
+end
+
+
+#finding collisions between balloons:
+
+
+fun no-wind(balls-list):
+  accumulator = [list: ]
+  no-wind-sorter(balls-list, accumulator)
+end
+
+
+fun wind-to-left(balls-list, speed-of-wind):
+accumulator = [list: ]
+  wind-to-left-sorter(balls-list, accumulator, speed-of-wind)
+end
+
+
+fun wind-to-right(balls-list, speed-of-wind):
+  accumulator = [list: ]
+  wind-to-right-sorter(balls-list, accumulator, speed-of-wind)
+end
+
+
+fun no-wind-sorter(balls-list, accumulator):
+  cases (List) balls-list:
+    | empty => empty
+    | link(f, r) =>
+      addition = accumulator.push(f)
+      if pushed-to-the-right-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
+        link(bounce-to-right(f), no-wind-sorter(r, addition))
+      else if pushed-to-the-left-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
+        link(bounce-to-left(f), no-wind-sorter(r, addition))
+      else:
+        link(regular-movement(f), no-wind-sorter(r, addition))
+  end
+end
+end
+
+
+fun wind-to-left-sorter(balls-list, accumulator, speed-of-wind):
+  cases (List) balls-list:
+    | empty => empty
+    | link(f, r) =>
+      addition = accumulator.push(f)
+      if pushed-up-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
+        link(bounce-up-and-right(f, speed-of-wind), 
+          wind-to-left-sorter(r, addition, speed-of-wind))
+      else if pushed-down-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
+        link(bounce-down-and-right(f, speed-of-wind), 
+          wind-to-left-sorter(r, addition, speed-of-wind))
+      else:
+        link(regular-wind-to-left-movement(f, speed-of-wind), 
+          wind-to-left-sorter(r, addition, speed-of-wind))
+  end
+end
+end
+
+
+fun wind-to-right-sorter(balls-list, accumulator, speed-of-wind):
+  cases (List) balls-list:
+    | empty => empty
+    | link(f, r) =>
+      addition = accumulator.push(f)
+      if pushed-up-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
+        link(bounce-up-and-left(f, speed-of-wind), 
+          wind-to-left-sorter(r, addition, speed-of-wind))
+      else if pushed-down-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
+        link(bounce-down-and-left(f, speed-of-wind), 
+          wind-to-left-sorter(r, addition, speed-of-wind))
+      else:
+        link(regular-wind-to-right-movement(f, speed-of-wind), 
+          wind-to-left-sorter(r, addition, speed-of-wind))
+  end
+end
+end
+
+
+fun my-square(n): n * n end
+
+
+fun pushed-to-the-right-by-another-ball(all-balls-list, x, y):
+  cases (List) all-balls-list:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+          and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+          and ((x - f.x) >= 0): 
+        true
+      else: 
+        pushed-to-the-right-by-another-ball(r, x, y)
+      end
+  end
+end
+
+
+fun pushed-to-the-left-by-another-ball(all-balls-list, x, y):
+  cases (List) all-balls-list:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+        and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+        and ((x - f.x) < 0): 
+        true
+      else: 
+        pushed-to-the-left-by-another-ball(r, x, y)
+      end
+  end
+end
+
+
+fun pushed-up-by-another-ball(all-balls-list, x, y):
+  cases (List) all-balls-list:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+        and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+        and ((y - f.y) < 0): 
+        true
+      else: 
+        pushed-up-by-another-ball(r, x, y)
+      end
+  end
+end
+
+
+fun pushed-down-by-another-ball(all-balls-list, x, y):
+  cases (List) all-balls-list:
+    | empty => false
+    | link(f, r) =>
+      if ((num-sqrt(my-square(x - f.x) + my-square(y - f.y)) < 100)
+        and (num-sqrt(my-square(x - f.x) + my-square(y - f.y)) > 0))
+        and ((y - f.y) >= 0): 
+        true
+      else: 
+        pushed-down-by-another-ball(r, x, y)
+      end
+  end
+end
+
+
+#world's motion 
+
+
+data Aircraft-position: coordinates(
+  x, 
+  y) 
+end
+
+
+data World: world(
+  fuel-level :: Number,
+  aircraft :: Aircraft-position,    
+  balloons-list :: List,                 
+  speed-on-runway :: Number,
+  left-wind-switch :: Boolean,
+  right-wind-switch :: Boolean,
+  left-wind-time :: Number,
+  right-wind-time :: Number,
+  windspeed :: Number) 
+end
+
+
+aircraft-x-speed = 5
+aircraft-y-speed = 2
+key-distance = 15
+lower-border-for-aircraft = ((height - base-height) - (craft-height / 2))
+water-area-for-aircraft = (((width / 3) * 2) + (craft-width / 2))
+upper-border-for-aircraft = craft-height / 2
+
+
+fun aircraft-horisontal-movement(x):
+  x + aircraft-x-speed
+end
+
+
+fun aircraft-descending(y):
+  y + aircraft-y-speed
+end
+
+
+fun aircraft-flying-in-circles(x):
+  num-modulo(aircraft-horisontal-movement(x), width)
+end
+
+
+fun random-for-wind-switches():
+  if random(400) == 50:
+    true
+  else:
+    false
+end
+end
+
+
+fun random-for-windspeed(max-wind-speed):
+  random(max-wind-speed) + 1
+end
+
+
+fun random-for-windtime(max-wind-time):
+  random(max-wind-time) + 10
+end
+
+
+fun aircraft-slowing-down-and-stop(world-state):
+  world(world-state.fuel-level,
+    coordinates(world-state.aircraft.x + world-state.speed-on-runway,
+      world-state.aircraft.y), 
+    no-wind(world-state.balloons-list),
+    world-state.speed-on-runway - 0.25,
+    world-state.left-wind-switch,
+    world-state.right-wind-switch,
+    world-state.left-wind-time,
+    world-state.right-wind-time,
+    world-state.windspeed)
+end
+
+
+fun left-wind-blows(world-state):
+  world(world-state.fuel-level,
+    coordinates(aircraft-flying-in-circles(world-state.aircraft.x),
+      aircraft-descending(world-state.aircraft.y)),  
+    wind-to-left(world-state.balloons-list, world-state.windspeed),
+    world-state.speed-on-runway,
+    world-state.left-wind-switch,
+    world-state.right-wind-switch,
+    world-state.left-wind-time - 1,
+    world-state.right-wind-time,
+    world-state.windspeed)
+end
+  
+
+fun right-wind-blows(world-state):
+  world(world-state.fuel-level,
+    coordinates(aircraft-flying-in-circles(world-state.aircraft.x),
+      aircraft-descending(world-state.aircraft.y)),  
+    wind-to-right(world-state.balloons-list, world-state.windspeed),
+    world-state.speed-on-runway,
+    world-state.left-wind-switch,
+    world-state.right-wind-switch,
+    world-state.left-wind-time,
+    world-state.right-wind-time - 1,
+    world-state.windspeed)
+end
+
+
+fun left-wind-off-refil-left-wind-counter(world-state):
+  world(world-state.fuel-level,
+    coordinates(aircraft-flying-in-circles(world-state.aircraft.x),
+      aircraft-descending(world-state.aircraft.y)),  
+    no-wind(world-state.balloons-list),
+    world-state.speed-on-runway,
+    not(world-state.left-wind-switch),
+    world-state.right-wind-switch,
+    world-state.left-wind-time + random-for-windtime(80),
+    world-state.right-wind-time,
+    world-state.windspeed)
+end
+
+
+fun right-wind-off-refil-right-wind-counter(world-state):
+  world(world-state.fuel-level,
+    coordinates(aircraft-flying-in-circles(world-state.aircraft.x),
+      aircraft-descending(world-state.aircraft.y)),  
+    no-wind(world-state.balloons-list),
+    world-state.speed-on-runway,
+    world-state.left-wind-switch,
+    not(world-state.right-wind-switch),
+    world-state.left-wind-time,
+    world-state.right-wind-time + random-for-windtime(80),
+    world-state.windspeed)
+end
+
+
+fun no-wind-movement(world-state):
+  world(world-state.fuel-level,
+    coordinates(aircraft-flying-in-circles(world-state.aircraft.x),
+      aircraft-descending(world-state.aircraft.y)),  
+    no-wind(world-state.balloons-list),
+    world-state.speed-on-runway,
+    random-for-wind-switches(),
+    random-for-wind-switches(),
+    world-state.left-wind-time,
+    world-state.right-wind-time,
+    random-for-windspeed(5))
+end
+  
+  
+fun movement-of-everything(world-state):
+  if (world-state.aircraft.y >= lower-border-for-aircraft) 
+    and (world-state.aircraft.x > water-area-for-aircraft):
+    aircraft-slowing-down-and-stop(world-state)
+  else if ((world-state.left-wind-switch == true) 
+    or ((world-state.left-wind-switch == true) 
+    and (world-state.right-wind-switch == true))) 
+    and (world-state.left-wind-time > 0):
+    left-wind-blows(world-state)    
+  else if (world-state.right-wind-switch == true) 
+    and (world-state.right-wind-time > 0):
+    right-wind-blows(world-state)    
+  else if world-state.left-wind-time == 0:
+    left-wind-off-refil-left-wind-counter(world-state)    
+  else if world-state.right-wind-time == 0:
+    right-wind-off-refil-right-wind-counter(world-state)    
+  else:
+    no-wind-movement(world-state)
+end
+end
+
+
+#aircraft control
+
+
+fun alter-aircraft-y-on-key(world-state, key):
+  ask:
+    | key == "up"   then:
+      if (world-state.fuel-level > 0) 
+          #and (world-state.aircraft.y >= upper-border-for-aircraft))
+        and (world-state.aircraft.y < lower-border-for-aircraft):
+        world(world-state.fuel-level - 1,
+          coordinates(world-state.aircraft.x,
+            world-state.aircraft.y - key-distance),  
+        world-state.balloons-list,
+        world-state.speed-on-runway,
+        world-state.left-wind-switch,
+        world-state.right-wind-switch,
+        world-state.left-wind-time,
+        world-state.right-wind-time,
+        world-state.windspeed)
+      else:
+        world-state 
+      end
+      
+    | key == "down" then:
+      if world-state.aircraft.y < lower-border-for-aircraft:
+        world(world-state.fuel-level,
+        coordinates(world-state.aircraft.x,
+          world-state.aircraft.y + key-distance),  
+        world-state.balloons-list,
+        world-state.speed-on-runway,
+        world-state.left-wind-switch,
+        world-state.right-wind-switch,
+        world-state.left-wind-time,
+        world-state.right-wind-time,
+        world-state.windspeed)
+      else:
+        world-state 
+      end
+      
+    | otherwise: world-state 
+  end
+end 
+
+
+#ending criteria 
+
+
+fun aircraft-is-on-baseline(world-state):
+  if (world-state.aircraft.y >= lower-border-for-aircraft) 
+    and (world-state.aircraft.x <= water-area-for-aircraft):
+    true
+  else if world-state.speed-on-runway <= 0:
+    true  
+  else: false  
+  end
+end
+
+
+fun aircraft-crashed-into-balloon(world-state):
+  aircraft-and-balloons-collision-check(world-state.balloons-list, world-state.aircraft.x, world-state.aircraft.y)
+end
+
+
+fun aircraft-and-balloons-collision-check(balloons-list, aircraft-x, aircraft-y):
+  cases (List) balloons-list:
+    | empty => false
+    | link(f,r) =>
+      if num-sqrt(my-square(aircraft-x - f.x) + my-square(aircraft-y - f.y)) > 75:
+        aircraft-and-balloons-collision-check(r, aircraft-x, aircraft-y)
+      else: true
+      end
+  end
+end
+
+
+fun game-ends(world-state):
+  ask:
+    | aircraft-is-on-baseline(world-state)                    then: true
+    | aircraft-crashed-into-balloon(world-state)              then: true
+    | otherwise: false
+  end
+end
+
+
+#reactor
+
+
+aircraft-start-x-position = craft-width / 2
+aircraft-start-y-position = craft-height / 2
+
+
+Start = world(
+  400, 
+  coordinates(aircraft-start-x-position, aircraft-start-y-position), 
+  List-of-balloons-coordinates, 
+  aircraft-x-speed, 
+  false, 
+  false, 
+  random-for-windtime(80), 
+  random-for-windtime(80),
+  random-for-windspeed(5))
+
+
+animation = reactor:
+  init: Start,
+  on-tick: movement-of-everything,
+  on-key: alter-aircraft-y-on-key,
+  to-draw: drawing-everything,
+  stop-when: game-ends
+end
+
+
+R.interact(animation)
