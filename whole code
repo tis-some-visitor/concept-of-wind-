@@ -803,13 +803,13 @@ fun wind-to-right-sorter(balls-list, accumulator, speed-of-wind):
       addition = accumulator.push(f)
       if pushed-up-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
         link(bounce-up-and-left(f, speed-of-wind), 
-          wind-to-left-sorter(r, addition, speed-of-wind))
+          wind-to-right-sorter(r, addition, speed-of-wind))
       else if pushed-down-by-another-ball(balls-list.append(addition), f.x, f.y) == true:
         link(bounce-down-and-left(f, speed-of-wind), 
-          wind-to-left-sorter(r, addition, speed-of-wind))
+          wind-to-right-sorter(r, addition, speed-of-wind))
       else:
         link(regular-wind-to-right-movement(f, speed-of-wind), 
-          wind-to-left-sorter(r, addition, speed-of-wind))
+          wind-to-right-sorter(r, addition, speed-of-wind))
   end
 end
 end
